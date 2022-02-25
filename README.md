@@ -8,7 +8,7 @@ A Home assistant custom component to read Enedis Linky teleinformation
 
 ![](./docs/linky-compteur.png)
 
-This project add a "EnedisLinky" integration to Home Assistant server. The integration is able to read in real time the TIC TeleInfomation sent by the Enedis Linky device. The data is then published into Home Assistant entities.
+This project adds a "EnedisLinky" integration to Home Assistant server. The integration is able to read in real time the TIC TeleInfomation sent by the Enedis Linky device. The data is then published into Home Assistant entities.
 
 The integration can be used with a [USB adapter](https://www.tindie.com/products/hallard/micro-teleinfo-v20/)  that convert the signal received from French dedicated energy meter Teleinfo to serial data. 
 
