@@ -1,0 +1,20 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Device is already configured"
+        },
+        "error": {
+            "cannot_connect": "Failed to connect",
+            "invalid_auth": "Invalid authentication",
+            "unknown": "Unexpected error"
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "path": "Chemin du p\u00e9riph\u00e9rique s\u00e9rie"
+                }
+            }
+        }
+    },
+    "title": "EnedisLinky"
+}

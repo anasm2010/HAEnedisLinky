@@ -1,0 +1,17 @@
+{
+  "domain": "Enedis_Linky",
+  "name": "EnedisLinky",
+  "config_flow": true,
+  "documentation": "https://www.home-assistant.io/integrations/Enedis_Linky",
+  "requirements": [
+    "pyserial==3.4"
+  ],
+  "ssdp": [],
+  "zeroconf": [],
+  "homekit": {},
+  "dependencies": [],
+  "codeowners": [
+    "@anasm2010"
+  ],
+  "version": "0.0.1"
+}
