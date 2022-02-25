@@ -2,7 +2,7 @@
   "domain": "Enedis_Linky",
   "name": "EnedisLinky",
   "config_flow": true,
-  "documentation": "https://www.home-assistant.io/integrations/Enedis_Linky",
+  "documentation": "https://github.com/anasm2010/HAEnedisLinky",
   "requirements": [
     "pyserial==3.4"
   ],

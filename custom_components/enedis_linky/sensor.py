@@ -9,16 +9,11 @@ _LOGGER = logging.getLogger(__name__)
 from homeassistant.components.sensor import (
     DEVICE_CLASS_POWER,
     DEVICE_CLASS_CURRENT,
-    # DOMAIN,
 )
-
-from homeassistant.util import Throttle
 
 from .const import (
     DOMAIN,
-    CONF_DEVICE_PATH,
-    CONF_DEVICE_NAME,
-    CONF_DOMAIN_DEVICE,
+    CONF_DEVICE_PATH
 )
 
 from .const import DOMAIN as integration_DOMAIN
@@ -33,18 +28,11 @@ from homeassistant.const import (
     ELECTRIC_CURRENT_AMPERE,
     ENERGY_WATT_HOUR,
 )
-from homeassistant.core import callback
-from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from homeassistant.util.temperature import fahrenheit_to_celsius
-
-from homeassistant.components.sensor import SensorEntity
 
 from homeassistant.helpers.entity import Entity
 
-# MIN_TIME_BETWEEN_UPDATES = timedelta(minutes=1)
 SCAN_INTERVAL = timedelta(seconds=10)
 
-TELEINFO_AVAILABLE_VALUES = ["HCHC", "HCHP", "IINST", "IMAX", "PAPP", "ISOUSC"]
 
 LINKY_ATTRIBUTES_UNIT = {
                             "PAPP"    : (POWER_VOLT_AMPERE          ,DEVICE_CLASS_POWER        ,"Puissance apparente triphasée soutirée"   ,int),
@@ -66,40 +54,29 @@ LINKY_ATTRIBUTES_UNIT = {
                             }
 
 
-# CHANNEL_ST_HUMIDITY_CLUSTER = f"channel_0x{SMARTTHINGS_HUMIDITY_CLUSTER:04x}"
-# STRICT_MATCH = functools.partial(ZHA_ENTITIES.strict_match, DOMAIN)
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the Zigbee Home Automation sensor from config entry."""
-    # entities_to_create = hass.data[DATA_ZHA][DOMAIN]
-
-    # unsub = async_dispatcher_connect(
-    #     hass,
-    #     SIGNAL_ADD_ENTITIES,
-    #     functools.partial(
-    #         discovery.async_add_entities, async_add_entities, entities_to_create
-    #     ),
-    # )
-    # hass.data[DATA_ZHA][DATA_ZHA_DISPATCHERS].append(unsub)
+    
     print(config_entry.data)
 
-    teleinfo_data = None
+    teleinfo_data_reader = None
     try:
-        teleinfo_data = TeleinfoData(hass, config_entry)
+        teleinfo_data_reader = TeleinfoDataReader(hass, config_entry)
 
     except Exception as err:
         print("Can't connect to teleinfo device: %s", str(err))
         _LOGGER.error("Can't connect to teleinfo device: %s", str(err))
         return False
 
-    hass.data.setdefault(DOMAIN, {})[config_entry.entry_id] = teleinfo_data
+    hass.data.setdefault(DOMAIN, {})[config_entry.entry_id] = teleinfo_data_reader
 
     devices = []
 
     for linly_sensor in LINKY_ATTRIBUTES_UNIT:
         unit_of_measurement, device_class, _, _ = LINKY_ATTRIBUTES_UNIT[linly_sensor]
-        devices.append(LinkySensor(linly_sensor, unit_of_measurement, device_class, teleinfo_data))
+        devices.append(LinkySensor(linly_sensor, unit_of_measurement, device_class, teleinfo_data_reader))
 
 
     async_add_entities(devices)
@@ -113,82 +90,7 @@ async def async_remove_entry(hass, config_entry) -> None:
     teleinfo_data.close()
 
 
-class TeleinfoSensor(Entity):
-    """Implementation of the Teleinfo sensor."""
-
-    def __init__(self, teleinfo_data, name):
-        """Initialize the sensor."""
-        self._name = name
-        self._unit_of_measurement = None
-        self._state = STATE_UNKNOWN
-        self._attributes = {}
-        self._data = teleinfo_data
-
-        self.manufacturername = "Enedis"
-        self.productname = "Linky"
-        self.swversion = "1.1.0"
-        self.bridgeid = "0X00"
-
-    @property
-    def name(self):
-        """Return the name of the sensor."""
-        return self._name
-
-    # @property
-    # def device_info(self):
-    #     return {
-    #         "identifiers": {
-    #             # Serial numbers are unique identifiers within a specific domain
-    #             (integration_DOMAIN, self.unique_id)
-    #         },
-    #         "name": self.name,
-    #         "manufacturer": self.manufacturername,
-    #         "model": self.productname,
-    #         "sw_version": self.swversion,
-    #         "via_device": (integration_DOMAIN, self.bridgeid),
-    #     }
-
-    @property
-    def unique_id(self):
-        """Return a unique ID."""
-        return "TeleinfoSensor"
-
-    @property
-    def state(self):
-        """Return the state of the device."""
-        return self._state
-
-    @property
-    def unit_of_measurement(self):
-        """Return the unit of measurement of this entity, if any."""
-        return self._unit_of_measurement
-
-    @property
-    def device_state_attributes(self):
-        """Return the state attributes."""
-        self._attributes[ATTR_ATTRIBUTION] = CONF_ATTRIBUTE
-        return self._attributes
-
-    def update(self):
-        """Get the latest data from Teleinfo device and updates the state."""
-        self._data.update()
-        if not self._data.frame:
-            _LOGGER.warn("Don't receive energy data from Teleinfo!")
-            return
-        # self._attributes = self._data.frame
-        _LOGGER.info("Frame read: %s" % self._data.frame)
-        for info in self._data.frame:
-            if info["name"] in TELEINFO_AVAILABLE_VALUES:
-                self._attributes[info["name"]] = int(info["value"])
-            else:
-                self._attributes[info["name"]] = info["value"]
-        self._state = self._attributes["ADCO"]
-        _LOGGER.debug(
-            "Sensor: state=%s attributes=%s" % (self._state, self._attributes)
-        )
-
-
-class TeleinfoData(threading.Thread):
+class TeleinfoDataReader(threading.Thread):
     """Get the latest data from Teleinfo."""
 
     def __init__(self, hass, config):
@@ -222,8 +124,6 @@ class TeleinfoData(threading.Thread):
     def frame(self):
         """Retour Teleinfo frame data."""
         return self._frame
-
-    # @Throttle(MIN_TIME_BETWEEN_UPDATES)
 
     def run(self):
         """get data from Teleinfo device."""
@@ -264,10 +164,10 @@ class LinkySensor(Entity):
     # https://developers.home-assistant.io/docs/core/entity/sensor
     should_poll = True
 
-    def __init__(self, roller, unit_of_measurement, device_class, teleinfo_data):
+    def __init__(self, linly_sensor_name, unit_of_measurement, device_class, teleinfo_data_reader):
         """Initialize the sensor."""
-        self._data = teleinfo_data
-        self._roller = roller
+        self._teleinfo_data_reader = teleinfo_data_reader
+        self._linly_sensor_name = linly_sensor_name
         self._unit_of_measurement = unit_of_measurement
         self._device_class = device_class
 
@@ -311,7 +211,7 @@ class LinkySensor(Entity):
     @property
     def unique_id(self):
         """Return Unique ID string."""
-        return self._roller.lower()
+        return self._linly_sensor_name.lower()
 
     # The value of this sensor. As this is a DEVICE_CLASS_BATTERY, this value must be
     # the battery level as a percentage (between 0 and 100)
@@ -338,7 +238,7 @@ class LinkySensor(Entity):
     @property
     def name(self):
         """Return the name of the sensor."""
-        return self._roller.upper()
+        return self._linly_sensor_name.upper()
 
     def setDisconected(self):
         self._state = STATE_UNKNOWN
@@ -351,10 +251,10 @@ class LinkySensor(Entity):
 
         Get the latest data from Teleinfo device and updates the state.
         """
-        if self._data.connected :
-            data = self._data.frame
-            if data and self._roller in data:
-                self._state = data[self._roller]
+        if self._teleinfo_data_reader.connected :
+            data = self._teleinfo_data_reader.frame
+            if data and self._linly_sensor_name in data:
+                self._state = data[self._linly_sensor_name]
                 self._available = True
             else:
                 self.setDisconected()
@@ -364,4 +264,4 @@ class LinkySensor(Entity):
     async def async_will_remove_from_hass(self) -> None:
         """Run when entity will be removed from hass.
         """
-        self._data.close()
+        self._teleinfo_data_reader.close()

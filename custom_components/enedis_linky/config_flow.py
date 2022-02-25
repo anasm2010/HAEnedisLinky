@@ -19,47 +19,6 @@ import serial.tools.list_ports
 
 _LOGGER = logging.getLogger(__name__)
 
-# class PlaceholderHub:
-#     """Placeholder class to make tests pass.
-
-#     TODO Remove this placeholder class and replace with things from your PyPI package.
-#     """
-
-#     def __init__(self, host):
-#         """Initialize."""
-#         self.host = host
-
-#     async def authenticate(self, username, password) -> bool:
-#         """Test if we can authenticate with the host."""
-#         return True
-
-
-# async def validate_input(hass: core.HomeAssistant, data):
-#     """Validate the user input allows us to connect.
-
-#     Data has the keys from DATA_SCHEMA with values provided by the user.
-#     """
-#     # TODO validate the data can be used to set up a connection.
-
-#     # If your PyPI package is not built with async, pass your methods
-#     # to the executor:
-#     # await hass.async_add_executor_job(
-#     #     your_validate_func, data["username"], data["password"]
-#     # )
-
-#     hub = PlaceholderHub(data["host"])
-
-#     if not await hub.authenticate(data["username"], data["password"]):
-#         raise InvalidAuth
-
-#     # If you cannot connect:
-#     # throw CannotConnect
-#     # If the authentication is wrong:
-#     # InvalidAuth
-
-#     # Return info that you want to store in the config entry.
-#     return {"title": "EDF TeleInfo"}
-
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for EnedisLinky."""
@@ -72,26 +31,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Initialize flow instance."""
         self._device_path = None
         self._radio_type = None
-
-    # async def async_step_user(self, user_input=None):
-    #     """Handle the initial step."""
-    #     errors = {}
-    #     if user_input is not None:
-    #         try:
-    #             info = await validate_input(self.hass, user_input)
-
-    #             return self.async_create_entry(title=info["title"], data=user_input)
-    #         except CannotConnect:
-    #             errors["base"] = "cannot_connect"
-    #         except InvalidAuth:
-    #             errors["base"] = "invalid_auth"
-    #         except Exception:  # pylint: disable=broad-except
-    #             _LOGGER.exception("Unexpected exception")
-    #             errors["base"] = "unknown"
-
-    #     return self.async_show_form(
-    #         step_id="user", data_schema=DATA_SCHEMA, errors=errors
-    #     )
 
     async def async_step_user(self, user_input=None):
         """Handle a teleinfo config flow start."""
@@ -138,8 +77,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_DEVICE_NAME: "TATA",
                 CONF_DEVICE_PATH: "/dev/ttyUSB0",
             }
-            # auto_detected_data = await detect_radios(dev_path)
-            # if auto_detected_data is not None:
+
             if True:
                 title = f"EDF TeleInfo : {port.description}, s/n: {port.serial_number or 'n/a'}"
                 title += f" - {port.manufacturer}" if port.manufacturer else ""
@@ -156,14 +94,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
 
-class CannotConnect(exceptions.HomeAssistantError):
-    """Error to indicate we cannot connect."""
-
-
-class InvalidAuth(exceptions.HomeAssistantError):
-    """Error to indicate there is invalid auth."""
-
-
 def get_serial_by_id(dev_path: str) -> str:
     """Return a /dev/serial/by-id match for given device if available."""
     by_id = "/dev/serial/by-id"
@@ -174,13 +104,3 @@ def get_serial_by_id(dev_path: str) -> str:
         if os.path.realpath(path) == dev_path:
             return path
     return dev_path
-
-
-# async def detect_radios(dev_path: str) -> Optional[Dict[str, Any]]:
-#     """Probe all radio types on the device port."""
-#     for radio in RadioType:
-#         dev_config = radio.controller.SCHEMA_DEVICE({CONF_DEVICE_PATH: dev_path})
-#         if await radio.controller.probe(dev_config):
-#             return {CONF_RADIO_TYPE: radio.name, CONF_DEVICE: dev_config}
-
-#     return None
