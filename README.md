@@ -13,3 +13,6 @@ This project adds a "EnedisLinky" integration to Home Assistant server. The inte
 The integration can be used with a [USB adapter](https://www.tindie.com/products/hallard/micro-teleinfo-v20/)  that convert the signal received from French dedicated energy meter Teleinfo to serial data. 
 
 ![](./docs/MicroTeleinfo_Top_V2.png)
+
+
+The integration can be used from the HA gui. Simply select the usb adapter within the proposed list and confirm. A linky device will be created and will gather all the loaded entities. 
